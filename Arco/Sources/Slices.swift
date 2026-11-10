@@ -479,6 +479,13 @@ final class SliceStore: @unchecked Sendable {
         return (c.number, c.ms(c.written))
     }
 
+    /// The newest slice, still written or already full: a paused slice can fill with what came in during the pause.
+    var newest: (number: Int, writtenMs: Int)? {
+        lock.lock(); defer { lock.unlock() }
+        guard let s = current ?? slices.keys.max().flatMap({ slices[$0] }) else { return nil }
+        return (s.number, s.ms(s.written))
+    }
+
     /// Whether a run is still the one being written (a superseded one must not go to Roon any more).
     func isCurrent(_ s: Slice) -> Bool { lock.lock(); defer { lock.unlock() }; return current === s }
 

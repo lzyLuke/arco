@@ -833,11 +833,15 @@ final class Bridge: ObservableObject {
                 }
                 // Roon far behind the stream on resuming (12:52:48: 110 s — the Music app played on through a pause it
                 // never made, its AppleScript timed out): no use catching up; a new run from where Music is, as at a skip.
-                if phase == .paused, let status = store?.status, roonSlice == status.number,
+                // Also when the slice is full already (9 Nov 2026, 18:13: a stray sound during the pause opened the writing,
+                // and the silence after it filled the paused slice — the Klimax resumed 4 min of silence), and the renderer
+                // waits for the new slice instead of resuming the old one, as after a skip during the pause.
+                if phase == .paused, let status = store?.newest, roonSlice == status.number,
                    status.writtenMs - roonPositionMs > 20_000, let track {
                     let left = max(1000, track.durationMs - Int(s.position() * 1000))
                     Log.note("resume: \(peer) is \((status.writtenMs - roonPositionMs) / 1000) s behind — a new run from where the Music app is")
                     store?.startTrack(.init(info: makeInfo(track), durationMs: left), newRun: true)
+                    nieuweRunNaPauze = true
                 }
                 // The splice (0.3.2, see Splice): the Music app a little back, the run's end found again in the new sound.
                 // Not near the start of a track (back would be another track), and not for Spotify.
